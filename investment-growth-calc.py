@@ -1,123 +1,168 @@
-# This program will calculate future value of an investment
 import tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Create window
+# ---------- WINDOW ----------
+
 root = tk.Tk()
 root.title("Investment Growth Calculator")
-root.geometry("900x700")
+root.geometry("1200x700")
+root.configure(bg="#1e1e1e")
 
-# Title
+# ---------- LAYOUT ----------
+
+controls = tk.Frame(root, bg="#1e1e1e")
+controls.pack(side=tk.LEFT, fill=tk.Y, padx=20, pady=20)
+
+graph_frame = tk.Frame(root, bg="#1e1e1e")
+graph_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+# ---------- TITLE ----------
+
 title = tk.Label(
-    root,
-    text="Investment Growth Calculator",
-    font=("Arial", 18, "bold")
+    controls,
+    text="Investment Growth",
+    font=("Helvetica", 22, "bold"),
+    fg="white",
+    bg="#1e1e1e"
 )
-title.pack(pady=10)
+title.pack(pady=(0, 20))
 
-# Future value label
 result_label = tk.Label(
-    root,
-    text="Future Value: $0.00",
-    font=("Arial", 14)
+    controls,
+    text="$0",
+    font=("Helvetica", 20),
+    fg="#4ade80",
+    bg="#1e1e1e"
 )
-result_label.pack(pady=10)
+result_label.pack(pady=(0, 20))
 
-# Create figure for graph
-fig = Figure(figsize=(7, 4), dpi=100)
+# ---------- GRAPH ----------
+
+fig = Figure(figsize=(8, 5), dpi=100)
 ax = fig.add_subplot(111)
 
-canvas = FigureCanvasTkAgg(fig, master=root)
+fig.patch.set_facecolor("#1e1e1e")
+ax.set_facecolor("#2b2b2b")
+
+canvas = FigureCanvasTkAgg(fig, master=graph_frame)
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+# ---------- UPDATE ----------
 
 def update_graph(value=None):
+
     PV = principal_slider.get()
+    C = contribution_slider.get()
     r = rate_slider.get() / 100
     years = years_slider.get()
 
     values = []
 
+    current = PV
+
     for year in range(years + 1):
-        FV = PV * (1 + r) ** year
-        values.append(FV)
+        values.append(current)
+        current = current * (1 + r) + C
 
     final_value = values[-1]
 
     result_label.config(
-        text=f"Future Value: ${final_value:,.2f}"
+        text=f"${final_value:,.0f}"
     )
 
     ax.clear()
-    ax.plot(range(years + 1), values)
 
-    ax.set_title("Investment Growth Over Time")
-    ax.set_xlabel("Years")
-    ax.set_ylabel("Value ($)")
-    ax.grid(True)
+    ax.plot(
+        range(years + 1),
+        values,
+        linewidth=3
+    )
+
+    ax.set_title(
+        "Portfolio Value Over Time",
+        color="white",
+        fontsize=14
+    )
+
+    ax.set_xlabel("Years", color="white")
+    ax.set_ylabel("Value ($)", color="white")
+
+    ax.tick_params(colors="white")
+
+    for spine in ax.spines.values():
+        spine.set_color("white")
+
+    ax.grid(alpha=0.3)
 
     canvas.draw()
 
+# ---------- SLIDER HELPER ----------
 
-# Starting Amount Slider
-principal_label = tk.Label(
-    root,
-    text="Starting Amount ($)"
+def create_slider(text, start, end, step, default):
+
+    label = tk.Label(
+        controls,
+        text=text,
+        fg="white",
+        bg="#1e1e1e",
+        font=("Helvetica", 11)
+    )
+    label.pack(anchor="w")
+
+    slider = tk.Scale(
+        controls,
+        from_=start,
+        to=end,
+        resolution=step,
+        orient=tk.HORIZONTAL,
+        length=300,
+        bg="#1e1e1e",
+        fg="white",
+        highlightthickness=0,
+        troughcolor="#444",
+        command=update_graph
+    )
+
+    slider.set(default)
+    slider.pack(pady=(0, 15))
+
+    return slider
+
+# ---------- SLIDERS ----------
+
+principal_slider = create_slider(
+    "Starting Amount ($)",
+    0,
+    100000,
+    100,
+    1000
 )
-principal_label.pack()
 
-principal_slider = tk.Scale(
-    root,
-    from_=0,
-    to=100000,
-    resolution=100,
-    orient=tk.HORIZONTAL,
-    length=500,
-    command=update_graph
+contribution_slider = create_slider(
+    "Annual Contribution ($)",
+    0,
+    50000,
+    100,
+    5000
 )
-principal_slider.set(1000)
-principal_slider.pack()
 
-# Return Slider
-rate_label = tk.Label(
-    root,
-    text="Annual Return (%)"
+rate_slider = create_slider(
+    "Annual Return (%)",
+    0,
+    15,
+    0.1,
+    7
 )
-rate_label.pack()
 
-rate_slider = tk.Scale(
-    root,
-    from_=0,
-    to=15,
-    resolution=0.1,
-    orient=tk.HORIZONTAL,
-    length=500,
-    command=update_graph
+years_slider = create_slider(
+    "Years",
+    0,
+    50,
+    1,
+    30
 )
-rate_slider.set(7)
-rate_slider.pack()
 
-# Years Slider
-years_label = tk.Label(
-    root,
-    text="Years"
-)
-years_label.pack()
-
-years_slider = tk.Scale(
-    root,
-    from_=0,
-    to=50,
-    resolution=1,
-    orient=tk.HORIZONTAL,
-    length=500,
-    command=update_graph
-)
-years_slider.set(10)
-years_slider.pack()
-
-# Initial graph
 update_graph()
 
 root.mainloop()
